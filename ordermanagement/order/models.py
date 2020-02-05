@@ -3,12 +3,12 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 products = db.Table('product_order', 
-        db.Column('productId', db.Integer, db.ForeignKey('product.productId'), primary_key=True),
-        db.Column('orderId', db.Integer, db.ForeignKey('order.orderId'), primary_key=True)
+        db.Column('product_id', db.Integer, db.ForeignKey('product.product_id'), primary_key=True),
+        db.Column('order_id', db.Integer, db.ForeignKey('order.order_id'), primary_key=True)
     )
 
 class Product(db.Model):
-    productId = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.Text)
     name = db.Column(db.String(50), nullable=False)
     stock_quantity = db.Column(db.Integer, nullable=False)
@@ -19,10 +19,10 @@ class Product(db.Model):
         return self.name
 
 class Customer(db.Model):
-    customerId = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
     email = db.Column(db.String(255))
-    orders = db.relationship('Order', backref='customer', lazy=True)
+
 
     def __str__(self):
         return self.name
@@ -33,26 +33,29 @@ class Office(db.Model):
     state = db.Column(db.String(255), nullable=False)
     country = db.Column(db.String(255), nullable=False)
 
+    #employees
+
     def __str__(self):
         return str(self.office_code)
 
 class Employee(db.Model):
-    employerId = db.Column(db.Integer, primary_key=True)
-    office_code = db.Column(db.Integer, db.ForeignKey('office.office_code'))
-    email = db.Column(db.String(255))
-    job_title = db.Column(db.String(255))
+    employer_id = db.Column(db.Integer, primary_key=True)
+    office_id = db.Column(db.Integer, db.ForeignKey('office.office_code'), nullable=True)
+    email = db.Column(db.String(255), nullable=False)
+    job_title = db.Column(db.String(255), nullable=False)
 
-    reports_to = db.Column(db.Integer, db.ForeignKey('employee.employerId'), nullable=True)
+    reports_to = db.Column(db.Integer, db.ForeignKey('employee.employer_id'), nullable=True)
 
     deliveries = db.relationship('Delivery', backref='employee', lazy=True)
-    employees = db.relationship('Employee', backref=db.backref('parent', remote_side='Employee.employerId'))
+    employees = db.relationship('Employee', backref=db.backref('parent', remote_side='Employee.employer_id'))
+    office = db.relationship('Office', backref='employees')
 
     def __str__(self):
-        return str(self.employerId)
+        return str(self.employer_id)
 
 class Order(db.Model):
-    orderId = db.Column(db.Integer, primary_key=True)
-    customerId = db.Column(db.Integer, db.ForeignKey('customer.customerId'))
+    order_id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'))
     quantity = db.Column(db.Integer)
     ordered_date = db.Column(db.DateTime)
     shipped_date = db.Column(db.DateTime)
@@ -62,13 +65,13 @@ class Order(db.Model):
     products = db.relationship('Product', secondary=products, lazy='subquery', backref=db.backref('orders', lazy=True))
 
     def __str__(self):
-        return str(self.orderId)
+        return str(self.order_id)
 
 
 class Delivery(db.Model):
-    deliveryId = db.Column(db.Integer, primary_key=True)
-    orderId = db.Column(db.Integer, db.ForeignKey('order.orderId'))
-    delivered_by = db.Column(db.Integer, db.ForeignKey('employee.employerId'))
+    delivery_id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.order_id'))
+    delivered_by_id = db.Column(db.Integer, db.ForeignKey('employee.employer_id'))
     delivered_date = db.Column(db.DateTime)
 
     def __str__(self):
