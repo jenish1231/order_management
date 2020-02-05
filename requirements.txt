@@ -4,3 +4,4 @@ flask-restful
 Flask-MySQLdb
 Flask-SQLAlchemy
 SQLAlchemy
+marshmallow

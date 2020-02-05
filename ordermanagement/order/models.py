@@ -10,10 +10,10 @@ products = db.Table('product_order',
 class Product(db.Model):
     productId = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.Text)
-    name = db.Column(db.String(255))
-    stock_quantity = db.Column(db.Integer)
-    vendor = db.Column(db.String(255))
-    price = db.Column(db.Integer)
+    name = db.Column(db.String(50), nullable=False)
+    stock_quantity = db.Column(db.Integer, nullable=False)
+    vendor = db.Column(db.String(255), nullable=False)
+    price = db.Column(db.Integer, nullable=False)
 
     def __str__(self):
         return self.name
@@ -29,9 +29,9 @@ class Customer(db.Model):
 
 class Office(db.Model):
     office_code = db.Column(db.Integer, primary_key=True)
-    address = db.Column(db.String(255))
-    state = db.Column(db.String(255))
-    country = db.Column(db.String(255))
+    address = db.Column(db.String(255), nullable=False)
+    state = db.Column(db.String(255), nullable=False)
+    country = db.Column(db.String(255), nullable=False)
 
     def __str__(self):
         return str(self.office_code)
@@ -39,12 +39,13 @@ class Office(db.Model):
 class Employee(db.Model):
     employerId = db.Column(db.Integer, primary_key=True)
     office_code = db.Column(db.Integer, db.ForeignKey('office.office_code'))
-    reports_to = db.Column(db.Integer, db.ForeignKey('employee.employerId'), nullable=True)
     email = db.Column(db.String(255))
     job_title = db.Column(db.String(255))
 
+    reports_to = db.Column(db.Integer, db.ForeignKey('employee.employerId'), nullable=True)
+
     deliveries = db.relationship('Delivery', backref='employee', lazy=True)
-    employees = db.relationship('Employee', backref='employee', lazy=True)
+    employees = db.relationship('Employee', backref=db.backref('parent', remote_side='Employee.employerId'))
 
     def __str__(self):
         return str(self.employerId)
@@ -57,7 +58,7 @@ class Order(db.Model):
     shipped_date = db.Column(db.DateTime)
     comments = db.Column(db.Text)
 
-    # deliveries = db.relationship('Delivery', backref='order', lazy=True)
+    deliveries = db.relationship('Delivery', backref='order', lazy=True)
     products = db.relationship('Product', secondary=products, lazy='subquery', backref=db.backref('orders', lazy=True))
 
     def __str__(self):
