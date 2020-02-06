@@ -1,16 +1,26 @@
 
-from .models import *
-from .schemas import *
-from .helper import *
 from flask import request
 
-class EmployeeListResource(ListResource):
+from .helper import *
+from .models import *
+from .schemas import *
+
+
+class EmployeeListResource(ListResource, CreateResource):
     model = Employee
     schema = EmployeeSchema
+
+class EmployeeResource(DetailResource, DeleteResource):
+    model = Employee
+    schema = EmployeeSchema
+
 
 class AddEmployeeToOfficeResource(GetObject, Resource):
     model = Office
 
+    """
+        validation : email
+    """
     def post(self, id):
         obj = self.get_object(id)
         json_data = request.get_json()
@@ -26,8 +36,6 @@ class AddEmployeeToOfficeResource(GetObject, Resource):
         db.session.commit()
         
         return EmployeeSchema().dump(employee)
-
-        
 
 class OfficeCreateResource(CreateResource, ListResource):
     model = Office
@@ -45,7 +53,7 @@ class OrderProductResource(Resource):
     def post(self):
         pass
 
-
-
-
+class CustomerCreateResource(CreateResource):
+    model = Customer
+    schema = CustomerSchema
 

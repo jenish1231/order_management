@@ -21,9 +21,14 @@ class Product(db.Model):
 class Customer(db.Model):
     customer_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
-    email = db.Column(db.String(255))
+    email = db.Column(db.String(255), unique=True)
+    password = db.Column(db.String(255), nullable=False)
 
+    def __init__(self, *args, **kwargs):
+        self.password = bcrypt.generate_password_hash(password)
+        super().__init__(*args, **kwargs)
 
+        
     def __str__(self):
         return self.name
 
@@ -41,10 +46,10 @@ class Office(db.Model):
 class Employee(db.Model):
     employer_id = db.Column(db.Integer, primary_key=True)
     office_id = db.Column(db.Integer, db.ForeignKey('office.office_code'), nullable=True)
-    email = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(255), nullable=False, unique=True)
     job_title = db.Column(db.String(255), nullable=False)
 
-    reports_to = db.Column(db.Integer, db.ForeignKey('employee.employer_id'), nullable=True)
+    reports_to = db.Column(db.Integer, db.ForeignKey('employee.employer_id', on_delete="SET NULL"), nullable=True)
 
     deliveries = db.relationship('Delivery', backref='employee', lazy=True)
     employees = db.relationship('Employee', backref=db.backref('parent', remote_side='Employee.employer_id'))

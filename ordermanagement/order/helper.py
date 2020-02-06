@@ -87,6 +87,7 @@ class DeleteResource(GetObject, BaseResource):
 
     def delete(self, id):
         obj = self.get_object(id)
+        print("deleting object", 11111111111111111111111)
         db.session.delete(obj)
         db.session.commit()
         return '', 204
