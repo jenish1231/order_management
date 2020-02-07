@@ -1,11 +1,14 @@
 
-from flask import request, jsonify, make_response
+from flask import jsonify, make_response, request
 
+from flask_jwt_extended import (create_access_token, create_refresh_token,
+                                jwt_required)
+
+from .decorators import *
 from .helper import *
 from .models import *
 from .schemas import *
-from .decorators import *
-from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required)
+
 
 class EmployeeListResource(ListResource, CreateResource):
     model = Employee
@@ -35,9 +38,6 @@ class EmployeeResource(DetailResource, DeleteResource):
 class AddEmployeeToOfficeResource(GetObject, Resource):
     model = Office
 
-    """
-        validation : email
-    """
     def post(self, id):
         obj = self.get_object(id)
         json_data = request.get_json()
@@ -70,6 +70,12 @@ class OrderProductResource(Resource):
     def post(self):
         pass
 
+def generate_token(user):
+    access_token = create_access_token(identity=user.email)
+    refresh_token = create_refresh_token(identity=user.email)
+
+    return {'access_token': access_token, 'refresh_token': refresh_token }
+
 class CustomerCreateResource(ListResource, CreateResource):
     model = Customer
     schema = CustomerSchema
@@ -77,12 +83,7 @@ class CustomerCreateResource(ListResource, CreateResource):
     def post(self):
         response, status_code = super().post()
         if status_code == 200:
-            access_token = create_access_token(identity=self.obj.email, user_claims={'customer':True})
-
-            return {
-                'access_token': access_token
-            }
-            
+            return generate_token(self.obj)
         return response, status_code
 
     @customer_required    
@@ -101,12 +102,10 @@ class LoginResource(Resource):
 
         user = self.model.query.filter_by(email=data['email']).first()
         if user and user.check_password(data['password']):
-            access_token = create_access_token(identity=user.email)
-            return {
-                'access_token':access_token
-            }
+            return generate_token(user)
         return {"error": "Username or password incorrect!!"}, 400
     
+
 class CustomerLoginResource(LoginResource):
     model = Customer
     schema = LoginSchema
@@ -114,4 +113,3 @@ class CustomerLoginResource(LoginResource):
 class EmployeeLoginResource(LoginResource):
     model = Employee
     schema = LoginSchema
-

@@ -10,16 +10,17 @@ services:
             MYSQL_PASSWORD: jenish1
             MYSQL_ROOT_PASSWORD: jenish1
         ports: 
-            - "33060:3306"
+            - "3306:3306"
         volumes: 
             - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     
     web:
         image: jenish1231/ordermanagement
-        command: python ordermanagement/app.py
         ports: 
             - 5000:5000
         depends_on: 
+            - db
+        links: 
             - db
         volumes: 
             - .:/app
