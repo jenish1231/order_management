@@ -43,7 +43,7 @@ class AddEmployeeToOfficeResource(GetObject, Resource):
         json_data = request.get_json()
 
         try:
-            employee_data = EmployeeSchema().load(json_data)
+            employee_data = NewEmployeeSchema().load(json_data)
         except ValidationError as err:
             return err.messages, 400
 
@@ -91,7 +91,6 @@ class CustomerCreateResource(ListResource, CreateResource):
         return super().get()
 
 class LoginResource(Resource):
-   
 
     def post(self):
         json_data = request.get_json()

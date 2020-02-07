@@ -39,36 +39,23 @@ class UserSchema(Schema):
 
 class EmployeeSchema(UserSchema):
     employer_id = fields.Int(dumpy_only=True)
-    # email = fields.Email(required=True)
     job_title = fields.String(required=True)
     reports_to = fields.Int()
     employees = fields.List(fields.Nested(lambda: EmployeeSchema(exclude=("employees",))))
     office = fields.Nested(OfficeSchema)
-    # password = fields.String(required=True)
-    # password2 = fields.String(required=True)
 
-    
+class NewEmployeeSchema(Schema):
+    employer_id = fields.Int(dumpy_only=True)
+    job_title = fields.String(required=True)
+    email = fields.Email(required=True)
+    reports_to = fields.Int()
+    employees = fields.List(fields.Nested(lambda: EmployeeSchema(exclude=("employees",))))
+    office = fields.Nested(OfficeSchema)
 
 class CustomerSchema(UserSchema):
     customer_id = fields.Int(dump_only=True)
-    # email = fields.Email(required=True)
     name = fields.String(required=True)
-    
-
-    # @validates('email')
-    # def validate_email(self, data, **kwargs):
-    #     customer = User.query.filter_by(email=data).first()
-    #     if customer:
-    #         raise ValidationError("Customer with {} already exist!".format(data))
-
-    # @validates_schema
-    # def validate_password2(self, data, **kwargs):
-    #     pw1 = data.get('password')
-    #     pw2 = data.get('password2')
-    #     if pw1 != pw2:
-    #         raise ValidationError("Password and password2 donot match!", "password")
-    #     data.pop('password2')
-    #     return data
+   
 
 class LoginSchema(Schema):
     email = fields.Email(required=True)
