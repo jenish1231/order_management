@@ -1,11 +1,31 @@
-from flask_sqlalchemy import SQLAlchemy
+import jwt
+from werkzeug.security import safe_str_cmp
 
-db = SQLAlchemy()
+from flask_sqlalchemy import SQLAlchemy
+from server import app, bcrypt
+import datetime
+
+db = SQLAlchemy(app)
 
 products = db.Table('product_order', 
         db.Column('product_id', db.Integer, db.ForeignKey('product.product_id'), primary_key=True),
         db.Column('order_id', db.Integer, db.ForeignKey('order.order_id'), primary_key=True)
     )
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+
+    def __init__(self, *args, **kwargs):
+        kwargs['password'] = bcrypt.generate_password_hash(kwargs['password'])
+        return super().__init__(*args, **kwargs)
+
+    def __str__(self):
+        return self.email
+
+    def check_password(self, password):
+        return bcrypt.check_password_hash(self.password, password)
 
 class Product(db.Model):
     product_id = db.Column(db.Integer, primary_key=True)
@@ -18,19 +38,16 @@ class Product(db.Model):
     def __str__(self):
         return self.name
 
-class Customer(db.Model):
-    customer_id = db.Column(db.Integer, primary_key=True)
+class Customer(User):
+    customer_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     name = db.Column(db.String(255))
-    email = db.Column(db.String(255), unique=True)
-    password = db.Column(db.String(255), nullable=False)
 
-    def __init__(self, *args, **kwargs):
-        self.password = bcrypt.generate_password_hash(password)
-        super().__init__(*args, **kwargs)
+    __mapper_args__ = {'inherit_condition': customer_id == User.id}
 
-        
     def __str__(self):
         return self.name
+
+    
 
 class Office(db.Model):
     office_code = db.Column(db.Integer, primary_key=True)
@@ -43,20 +60,26 @@ class Office(db.Model):
     def __str__(self):
         return str(self.office_code)
 
-class Employee(db.Model):
-    employer_id = db.Column(db.Integer, primary_key=True)
-    office_id = db.Column(db.Integer, db.ForeignKey('office.office_code'), nullable=True)
-    email = db.Column(db.String(255), nullable=False, unique=True)
+class Employee(User):
+    employee_id = db.Column(db.Integer,  db.ForeignKey('user.id'), primary_key=True)
     job_title = db.Column(db.String(255), nullable=False)
 
-    reports_to = db.Column(db.Integer, db.ForeignKey('employee.employer_id', on_delete="SET NULL"), nullable=True)
+    office_id = db.Column(db.Integer, db.ForeignKey('office.office_code'), nullable=True)
+    office = db.relationship('Office', backref='employees')
+    
 
     deliveries = db.relationship('Delivery', backref='employee', lazy=True)
-    employees = db.relationship('Employee', backref=db.backref('parent', remote_side='Employee.employer_id'))
-    office = db.relationship('Office', backref='employees')
+    
+    reports_to = db.Column(db.Integer, db.ForeignKey('employee.employee_id', on_delete="SET NULL"), nullable=True)
+    employees = db.relationship('Employee', backref=db.backref('parent', remote_side='Employee.employee_id', ), primaryjoin='Employee.employee_id==Employee.reports_to')
+    
+
+    __mapper_args__ = {'inherit_condition': employee_id == User.id, 'polymorphic_identity':'Employee'}
+
 
     def __str__(self):
-        return str(self.employer_id)
+        return str(self.employee_id)
+
 
 class Order(db.Model):
     order_id = db.Column(db.Integer, primary_key=True)
@@ -76,9 +99,8 @@ class Order(db.Model):
 class Delivery(db.Model):
     delivery_id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey('order.order_id'))
-    delivered_by_id = db.Column(db.Integer, db.ForeignKey('employee.employer_id'))
+    delivered_by_id = db.Column(db.Integer, db.ForeignKey('employee.employee_id'))
     delivered_date = db.Column(db.DateTime)
 
     def __str__(self):
         return str(self.deliveryId)
-

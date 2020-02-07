@@ -35,10 +35,11 @@ class CreateResource(BaseResource):
         except ValidationError as err:
             return err.messages, 400
         
-        obj = self.model(**data)
-        db.session.add(obj)
+        self.obj = self.model(**data)
+
+        db.session.add(self.obj)
         db.session.commit()
-        return data
+        return self.schema().dump(self.obj), 200
 
 class DetailResource(GetObject, BaseResource):
     

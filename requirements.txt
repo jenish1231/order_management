@@ -5,5 +5,5 @@ Flask-MySQLdb
 Flask-SQLAlchemy
 SQLAlchemy
 marshmallow
-Flask-JWT
 flask-bcrypt
+flask-jwt-extended
