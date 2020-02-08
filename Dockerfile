@@ -13,4 +13,4 @@ EXPOSE 5000
 RUN chmod +x run.sh
 
 
-CMD ["/bin/bash","run.sh"]
+# CMD ["/bin/bash","run.sh"]

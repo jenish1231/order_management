@@ -15,14 +15,11 @@ services:
             - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     
     web:
-        image: jenish1231/ordermanagement
-        build: .
-        command: python ordermanagement/app.py
+        image: jenish1231/order
+        command: bash run.sh
         ports: 
             - 5000:5000
         depends_on: 
-            - db
-        links: 
             - db
         volumes: 
             - .:/app
