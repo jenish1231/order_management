@@ -9,7 +9,6 @@ def customer_required(func):
         if Employee return "Unauthorized"
     """
 
-    print("customer required")
     with app.app_context():
         @jwt_required
         def inner(*args, **kwargs):
