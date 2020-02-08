@@ -8,15 +8,21 @@ api = Api(api_bp)
 
 url_patterns = [
     ('/products', ProductCreateResource),
-    ('/product/<product_id>/order', OrderProduct),
-    ('/product/<id>', UpdateDeleteProductResource),
+    ('/product/<int:product_id>/order', OrderProductResource),
+    ('/product/<int:id>', UpdateDeleteProductResource),
+
     ('/offices', OfficeCreateResource),
-    ('/office/<id>/add-employee', AddEmployeeToOfficeResource),
+    ('/office/<int:id>/add-employee', AddEmployeeToOfficeResource),
+
     ('/employees', EmployeeListResource),
-    ('/employee/<id>', EmployeeResource),
+    ('/employee/login', EmployeeLoginResource),
+    ('/employee/<int:id>', EmployeeResource),
+    
     ('/customers', CustomerCreateResource),
     ('/customer/login', CustomerLoginResource),
-    ('/employee/login', EmployeeLoginResource),
+    
+    ('/deliver/<int:order_id>', DeliverProductResource),
+    ('/orders', OrderListResource)
     
 ]
 

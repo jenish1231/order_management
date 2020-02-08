@@ -50,9 +50,15 @@ class NewEmployeeSchema(Schema):
     employer_id = fields.Int(dumpy_only=True)
     job_title = fields.String(required=True)
     email = fields.Email(required=True)
-    reports_to = fields.Int()
+    reports_to = fields.Int(dump_only=True)
     employees = fields.List(fields.Nested(lambda: EmployeeSchema(exclude=("employees",))))
     office = fields.Nested(OfficeSchema)
+
+    @validates('email')
+    def validate_email(self, data, **kwargs):
+        employee = User.query.filter_by(email=data).first()
+        if employee:
+            raise ValidationError(f"User with {data} already exist!")
 
 class CustomerSchema(UserSchema):
     customer_id = fields.Int(dump_only=True)
@@ -67,7 +73,8 @@ class OrderSchema(Schema):
     order_id = fields.Int(dump_only=True)
     customer_id = fields.Int(dump_only=True)
     quantity = fields.Int(required=True)
-    ordered_date = fields.DateTime()
+    ordered_date = fields.DateTime(dump_only=True)
+    shipped_date = fields.DateTime(dump_only=True)
     comments = fields.String()
 
     def __init__(self, *args, **kwargs):
@@ -77,8 +84,12 @@ class OrderSchema(Schema):
 
     @validates('quantity')
     def validate_quantity(self, data, **kwargs):
-        print(self.obj)
         qty = self.obj.stock_quantity
         if data > qty:
             raise ValidationError(f"Cannot order more than {qty} items")
         
+class DeliverSchema(Schema):
+    delivery_id = fields.Int(dump_only=True)
+    order_id = fields.Int(dump_only=True)
+    delivered_by_id = fields.Int()
+    delivered_date = fields.DateTime(dump_only=True)

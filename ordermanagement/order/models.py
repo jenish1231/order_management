@@ -1,5 +1,6 @@
 import jwt
 from werkzeug.security import safe_str_cmp
+import random
 
 from flask_sqlalchemy import SQLAlchemy
 from server import app, bcrypt
@@ -12,7 +13,16 @@ products = db.Table('product_order',
         db.Column('order_id', db.Integer, db.ForeignKey('order.order_id'), primary_key=True)
     )
 
-class User(db.Model):
+class BaseModel(object):
+    def save(self, *args, **kwargs):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+class User(BaseModel, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
@@ -27,7 +37,7 @@ class User(db.Model):
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password, password)
 
-class Product(db.Model):
+class Product(BaseModel, db.Model):
     product_id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.Text)
     name = db.Column(db.String(50), nullable=False)
@@ -49,7 +59,7 @@ class Customer(User):
 
     
 
-class Office(db.Model):
+class Office(BaseModel, db.Model):
     office_code = db.Column(db.Integer, primary_key=True)
     address = db.Column(db.String(255), nullable=False)
     state = db.Column(db.String(255), nullable=False)
@@ -68,9 +78,7 @@ class Employee(User):
     office = db.relationship('Office', backref='employees')
     
 
-    deliveries = db.relationship('Delivery', backref='employee', lazy=True)
-    
-    reports_to = db.Column(db.Integer, db.ForeignKey('employee.employee_id', on_delete="SET NULL"), nullable=True)
+    reports_to = db.Column(db.Integer, db.ForeignKey('employee.employee_id'), nullable=True)
     employees = db.relationship('Employee', backref=db.backref('parent', remote_side='Employee.employee_id', ), primaryjoin='Employee.employee_id==Employee.reports_to')
     
 
@@ -81,26 +89,31 @@ class Employee(User):
         return str(self.employee_id)
 
 
-class Order(db.Model):
+class Order(BaseModel, db.Model):
     order_id = db.Column(db.Integer, primary_key=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'))
     quantity = db.Column(db.Integer)
     ordered_date = db.Column(db.DateTime)
     shipped_date = db.Column(db.DateTime)
     comments = db.Column(db.Text)
 
-    deliveries = db.relationship('Delivery', backref='order', lazy=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'))
+    customer = db.relationship('Customer', backref='orders', lazy=True)
+
+    # deliveries = db.relationship('Delivery', backref='order', lazy=True)
     products = db.relationship('Product', secondary=products, lazy='subquery', backref=db.backref('orders', lazy=True))
 
     def __str__(self):
         return str(self.order_id)
 
 
-class Delivery(db.Model):
+class Delivery(BaseModel, db.Model):
     delivery_id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.Integer, db.ForeignKey('order.order_id'))
-    delivered_by_id = db.Column(db.Integer, db.ForeignKey('employee.employee_id'))
     delivered_date = db.Column(db.DateTime)
 
+    order_id = db.Column(db.Integer, db.ForeignKey('order.order_id'))
+
+    delivered_by_id = db.Column(db.Integer, db.ForeignKey('employee.employee_id'))
+    delivered_by = db.relationship('Employee', backref='deliveries', lazy=True)
+
     def __str__(self):
-        return str(self.deliveryId)
+        return str(self.delivery_id)

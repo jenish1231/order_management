@@ -1,4 +1,6 @@
 
+import string
+
 from flask import jsonify, make_response, request
 
 from flask_jwt_extended import (create_access_token, create_refresh_token,
@@ -10,6 +12,12 @@ from .models import *
 from .schemas import *
 
 
+def generate_token(user):
+    access_token = create_access_token(identity=user.email)
+    refresh_token = create_refresh_token(identity=user.email)
+
+    return {'access_token': access_token, 'refresh_token': refresh_token }
+    
 class EmployeeListResource(ListResource, CreateResource):
     model = Employee
     schema = EmployeeSchema
@@ -17,12 +25,7 @@ class EmployeeListResource(ListResource, CreateResource):
     def post(self):
         response, status_code = super().post()
         if status_code == 200:
-            access_token = create_access_token(identity=self.obj.email)
-
-            return {
-                'access_token': access_token
-            }
-            
+            return generate_token(self.obj)
         return response, status_code
 
     @employee_required
@@ -35,30 +38,29 @@ class EmployeeResource(DetailResource, DeleteResource):
 
    
 
-class AddEmployeeToOfficeResource(GetObject, Resource):
+class AddEmployeeToOfficeResource(Resource):
     model = Office
 
     def post(self, id):
-        obj = self.get_object(id)
+        obj = get_object_or_404(self.model, id)
         json_data = request.get_json()
 
         try:
             employee_data = NewEmployeeSchema().load(json_data)
         except ValidationError as err:
             return err.messages, 400
-
+        employee_data['password'] = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
         employee = Employee(**employee_data)
         employee.office_id = obj.office_code
-        db.session.add(employee)
-        db.session.commit()
+        employee.save()
         
-        return EmployeeSchema().dump(employee)
+        return NewEmployeeSchema().dump(employee)
 
-class OfficeCreateResource(CreateResource, ListResource):
+class OfficeCreateResource(CreateResource):
     model = Office
     schema = OfficeSchema
 
-class ProductCreateResource(CreateResource, ListResource):
+class ProductCreateResource(CreateResource):
     model = Product
     schema = ProductSchema
 
@@ -66,11 +68,7 @@ class UpdateDeleteProductResource(UpdateResource, DeleteResource):
     model = Product
     schema = ProductSchema
 
-def generate_token(user):
-    access_token = create_access_token(identity=user.email)
-    refresh_token = create_refresh_token(identity=user.email)
 
-    return {'access_token': access_token, 'refresh_token': refresh_token }
 
 class CustomerCreateResource(ListResource, CreateResource):
     model = Customer
@@ -109,7 +107,7 @@ class EmployeeLoginResource(LoginResource):
     model = Employee
     schema = LoginSchema
 
-class OrderProduct(Resource):
+class OrderProductResource(Resource):
     schema = OrderSchema
 
     @customer_required
@@ -121,17 +119,36 @@ class OrderProduct(Resource):
             data = self.schema(extra=obj).load(json_data)
         except ValidationError as err:
             return err.messages, 400
-        
+
+        identity = get_jwt_identity()
+        customer = Customer.query.filter_by(email=identity).first()
+
         order = Order(**data)
         order.ordered_date = datetime.datetime.now()
+        order.customer_id = customer.customer_id
         
         obj.stock_quantity -= order.quantity
-
-
-        db.session.add(order)
-        db.session.commit()
-        return self.schema().dump(order)
-
+        order.save()
 
         
+        return self.schema().dump(order)
 
+class DeliverProductResource(Resource):
+    schema = DeliverSchema
+    
+    @employee_required
+    def post(self, order_id):
+        identity = get_jwt_identity()
+        employee = Employee.query.filter_by(email=identity).first()
+        
+        order = get_object_or_404(Order, order_id)
+        
+        deliver = Delivery(order_id=order.order_id, delivered_by_id=employee, delivered_date=datetime.datetime.now())
+        order.shipped_date = datetime.datetime.now()
+        deliver.save()
+
+        return self.schema().dump(deliver)
+
+class OrderListResource(ListResource):
+    model = Order
+    schema = OrderSchema

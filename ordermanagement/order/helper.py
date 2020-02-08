@@ -9,22 +9,21 @@ class BaseResource(Resource):
         assert hasattr(self, 'model'), "Must include model"
         assert hasattr(self, 'schema'), "Must include a schema"
 
-class GetObject(object):
-    def __init__(self):
-        super().__init__()
-        self.name = self.model.__name__.lower() + 's'
+# class GetObject(object):
+#     def __init__(self):
+#         super().__init__()
+#         self.name = self.model.__name__.lower() + 's'
 
-    def get_object(self, id):
-        print("get object")
-        try:
-            int(id)
-        except:
-            return {"message" : "Invalid parameters"}
+#     def get_object(self, id):
+#         try:
+#             int(id)
+#         except:
+#             return {"message" : "Invalid parameters"}
         
-        obj = self.model.query.get(id)
-        if not obj:
-            abort(404, message="{} {} doesnot exist".format(self.name, id))
-        return obj
+#         obj = self.model.query.get(id)
+#         if not obj:
+#             abort(404, message="{} {} doesnot exist".format(self.name, id))
+#         return obj
 
 def get_object_or_404(Klass, id):
     try:
@@ -48,14 +47,13 @@ class CreateResource(BaseResource):
         
         self.obj = self.model(**data)
 
-        db.session.add(self.obj)
-        db.session.commit()
+        self.obj.save()
         return self.schema().dump(self.obj), 200
 
-class DetailResource(GetObject, BaseResource):
+class DetailResource(BaseResource):
     
     def get(self, id):
-        obj = self.get_object(id)
+        obj = get_object_or_404(self.model, id)
         if not isinstance(obj, self.model):
             return obj
         
@@ -73,10 +71,10 @@ class ListResource(BaseResource):
         result = self.schema(many=True).dump(object_list)
         return { self.name : result }
 
-class UpdateResource(GetObject, BaseResource):
+class UpdateResource(BaseResource):
 
     def put(self, id):
-        obj = self.get_object(id)
+        obj = get_object_or_404(self.model, id)
 
         if not isinstance(obj, self.model):
             return obj
@@ -95,12 +93,10 @@ class UpdateResource(GetObject, BaseResource):
         db.session.commit()
         return self.schema().dump(obj)
 
-class DeleteResource(GetObject, BaseResource):
+class DeleteResource(BaseResource):
 
     def delete(self, id):
-        obj = self.get_object(id)
-        print("deleting object", 11111111111111111111111)
-        db.session.delete(obj)
-        db.session.commit()
+        obj = get_object_or_404(self.model, id)
+        obj.delete()
         return '', 204
 
