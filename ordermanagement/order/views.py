@@ -66,10 +66,6 @@ class UpdateDeleteProductResource(UpdateResource, DeleteResource):
     model = Product
     schema = ProductSchema
 
-class OrderProductResource(Resource):
-    def post(self):
-        pass
-
 def generate_token(user):
     access_token = create_access_token(identity=user.email)
     refresh_token = create_refresh_token(identity=user.email)
@@ -86,7 +82,7 @@ class CustomerCreateResource(ListResource, CreateResource):
             return generate_token(self.obj)
         return response, status_code
 
-    @customer_required    
+    @customer_required   
     def get(self):
         return super().get()
 
@@ -112,3 +108,30 @@ class CustomerLoginResource(LoginResource):
 class EmployeeLoginResource(LoginResource):
     model = Employee
     schema = LoginSchema
+
+class OrderProduct(Resource):
+    schema = OrderSchema
+
+    @customer_required
+    def post(self, product_id):
+        obj = get_object_or_404(Product, product_id)
+        json_data = request.get_json()
+
+        try:
+            data = self.schema(extra=obj).load(json_data)
+        except ValidationError as err:
+            return err.messages, 400
+        
+        order = Order(**data)
+        order.ordered_date = datetime.datetime.now()
+        
+        obj.stock_quantity -= order.quantity
+
+
+        db.session.add(order)
+        db.session.commit()
+        return self.schema().dump(order)
+
+
+        
+

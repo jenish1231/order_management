@@ -14,3 +14,4 @@ RUN chmod +x run.sh
 
 
 CMD ["/bin/bash","run.sh"]
+# CMD flask run --host=0.0.0.0

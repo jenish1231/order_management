@@ -8,6 +8,8 @@ def customer_required(func):
         extends jwt_required and checks whether the user is Customer or Employee.
         if Employee return "Unauthorized"
     """
+
+    print("customer required")
     with app.app_context():
         @jwt_required
         def inner(*args, **kwargs):

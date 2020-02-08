@@ -26,6 +26,17 @@ class GetObject(object):
             abort(404, message="{} {} doesnot exist".format(self.name, id))
         return obj
 
+def get_object_or_404(Klass, id):
+    try:
+        int(id)
+    except:
+        return {"message" : "Invalid parameters"}
+    
+    obj = Klass.query.get(id)
+    if not obj:
+        abort(404, message="{} {} doesnot exist".format(Klass.__name__, id))
+    return obj
+    
 class CreateResource(BaseResource):
     def post(self):
         json_data = request.get_json()

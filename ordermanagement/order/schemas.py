@@ -1,6 +1,8 @@
 from marshmallow import Schema, fields, validate, ValidationError, validates
 from marshmallow.decorators import validates_schema
 from .models import *
+from flask import request
+import datetime
 
 
 class ProductSchema(Schema):
@@ -26,7 +28,7 @@ class UserSchema(Schema):
     def validate_email(self, data, **kwargs):
         employee = User.query.filter_by(email=data).first()
         if employee:
-            raise ValidationError("User with {} already exist!".format(data))
+            raise ValidationError(f"User with {data} already exist!")
     
     @validates_schema
     def validate_password2(self, data, **kwargs):
@@ -60,3 +62,23 @@ class CustomerSchema(UserSchema):
 class LoginSchema(Schema):
     email = fields.Email(required=True)
     password = fields.String(required=True)
+
+class OrderSchema(Schema):
+    order_id = fields.Int(dump_only=True)
+    customer_id = fields.Int(dump_only=True)
+    quantity = fields.Int(required=True)
+    ordered_date = fields.DateTime()
+    comments = fields.String()
+
+    def __init__(self, *args, **kwargs):
+        if kwargs.get('extra'):
+            self.obj = kwargs.pop('extra')
+        super().__init__(*args, **kwargs)
+
+    @validates('quantity')
+    def validate_quantity(self, data, **kwargs):
+        print(self.obj)
+        qty = self.obj.stock_quantity
+        if data > qty:
+            raise ValidationError(f"Cannot order more than {qty} items")
+        

@@ -16,6 +16,8 @@ services:
     
     web:
         image: jenish1231/ordermanagement
+        # build: .
+        command: python ordermanagement/app.py
         ports: 
             - 5000:5000
         depends_on: 

@@ -8,6 +8,7 @@ api = Api(api_bp)
 
 url_patterns = [
     ('/products', ProductCreateResource),
+    ('/product/<product_id>/order', OrderProduct),
     ('/product/<id>', UpdateDeleteProductResource),
     ('/offices', OfficeCreateResource),
     ('/office/<id>/add-employee', AddEmployeeToOfficeResource),
@@ -16,6 +17,7 @@ url_patterns = [
     ('/customers', CustomerCreateResource),
     ('/customer/login', CustomerLoginResource),
     ('/employee/login', EmployeeLoginResource),
+    
 ]
 
 for url, view in url_patterns:
