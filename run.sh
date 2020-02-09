@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 
-echo "bash"
-
 echo "running migrations"
 
-# mysql -u root -p "jenish1"
-sleep 25
+while ! nc -z db 3306; do
+    sleep 0.5
+done
 
 if [ ! -d "migrations" ];then
     echo "no folder"
