@@ -143,11 +143,12 @@ class DeliverProductResource(Resource):
         
         order = get_object_or_404(Order, order_id)
         
-        deliver = Delivery(order_id=order.order_id, delivered_by_id=employee, delivered_date=datetime.datetime.now())
-        order.shipped_date = datetime.datetime.now()
-        deliver.save()
-
-        return self.schema().dump(deliver)
+        if not order.shipped_date:
+            deliver = Delivery(order_id=order.order_id, delivered_by_id=employee, delivered_date=datetime.datetime.now())
+            order.shipped_date = datetime.datetime.now()
+            deliver.save()
+            return self.schema().dump(deliver)
+        return {"status":"Order has already been delivered!"}
 
 class OrderListResource(ListResource):
     model = Order
